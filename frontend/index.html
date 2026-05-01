@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Campus Pulse Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:linear-gradient(135deg,#eef2ff,#f8fafc);
+    color:#0f172a;
+}
+
+.layout{
+    display:flex;
+    min-height:100vh;
+}
+
+.sidebar{
+    width:88px;
+    background:rgba(255,255,255,0.7);
+    backdrop-filter:blur(15px);
+    border-right:1px solid #e2e8f0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding-top:25px;
+    gap:22px;
+}
+
+.logo{
+    width:48px;
+    height:48px;
+    border-radius:16px;
+    background:#4f46e5;
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    box-shadow:0 10px 25px rgba(79,70,229,0.35);
+}
+
+.side-item{
+    width:44px;
+    height:44px;
+    border-radius:14px;
+    background:white;
+    color:#4f46e5;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:bold;
+    box-shadow:0 8px 20px rgba(15,23,42,0.08);
+}
+
+.main{
+    flex:1;
+    padding:30px;
+}
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:25px;
+}
+
+.header h1{
+    margin:0;
+    font-size:34px;
+    letter-spacing:-1px;
+}
+
+.header p{
+    margin:7px 0 0;
+    color:#64748b;
+}
+
+.actions{
+    display:flex;
+    gap:12px;
+    align-items:center;
+}
+
+select{
+    padding:12px 16px;
+    border-radius:14px;
+    border:1px solid #cbd5e1;
+    background:white;
+    outline:none;
+}
+
+.logout{
+    padding:12px 16px;
+    border:none;
+    border-radius:14px;
+    background:#ef4444;
+    color:white;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.cards{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+    margin-bottom:22px;
+}
+
+.card{
+    background:rgba(255,255,255,0.92);
+    border:1px solid #e2e8f0;
+    border-radius:24px;
+    padding:22px;
+    box-shadow:0 12px 30px rgba(15,23,42,0.06);
+    transition:0.25s;
+}
+
+.card:hover{
+    transform:translateY(-5px);
+}
+
+.card span{
+    color:#64748b;
+    font-size:14px;
+}
+
+.card h2{
+    margin:10px 0 0;
+    font-size:28px;
+}
+
+.blue{border-top:5px solid #4f46e5}
+.green{border-top:5px solid #22c55e}
+.orange{border-top:5px solid #f59e0b}
+.red{border-top:5px solid #ef4444}
+
+.dashboard-grid{
+    display:grid;
+    grid-template-columns:2fr 1fr;
+    gap:22px;
+}
+
+.panel{
+    background:white;
+    border:1px solid #e2e8f0;
+    border-radius:24px;
+    padding:24px;
+    box-shadow:0 12px 30px rgba(15,23,42,0.06);
+}
+
+.panel h3{
+    margin:0 0 6px;
+}
+
+.panel p{
+    margin:0 0 15px;
+    color:#64748b;
+    font-size:14px;
+}
+
+.chart-box{
+    height:330px;
+}
+
+.insight{
+    background:linear-gradient(135deg,#4f46e5,#7c3aed);
+    color:white;
+}
+
+.insight p{
+    color:#eef2ff;
+    line-height:1.6;
+}
+
+canvas{
+    max-height:330px;
+}
+
+@media(max-width:900px){
+    .sidebar{display:none}
+    .cards{grid-template-columns:repeat(2,1fr)}
+    .dashboard-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+
+<script>
+if(localStorage.getItem("campusPulseLogin") !== "true"){
+    window.location.href = "login.html";
+}
+</script>
+
+<div class="layout">
+
+    <aside class="sidebar">
+        <div class="logo">CP</div>
+        <div class="side-item">D</div>
+        <div class="side-item">A</div>
+        <div class="side-item">R</div>
+    </aside>
+
+    <main class="main">
+
+        <div class="header">
+            <div>
+                <h1 id="title">Campus Pulse Dashboard</h1>
+                <p>Student satisfaction analytics for campus facilities</p>
+            </div>
+
+            <div class="actions">
+                <select id="filter" onchange="applyFilter()">
+                    <option value="All">All Facilities</option>
+                    <option value="Library">Library</option>
+                    <option value="Cafeteria">Cafeteria</option>
+                    <option value="Sports">Sports</option>
+                </select>
+                <button class="logout" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <section class="cards">
+            <div class="card blue">
+                <span>Average Satisfaction</span>
+                <h2 id="avg">--</h2>
+            </div>
+
+            <div class="card green">
+                <span>Best Facility</span>
+                <h2 id="best">--</h2>
+            </div>
+
+            <div class="card orange">
+                <span>Worst Facility</span>
+                <h2 id="worst">--</h2>
+            </div>
+
+            <div class="card red">
+                <span>Total Feedback</span>
+                <h2 id="total">--</h2>
+            </div>
+        </section>
+
+        <section class="dashboard-grid">
+            <div class="panel">
+                <h3>Facility-wise Satisfaction Score</h3>
+                <p>Average satisfaction score from 1 to 5 for each facility.</p>
+                <div class="chart-box">
+                    <canvas id="chart"></canvas>
+                </div>
+            </div>
+
+            <div class="panel insight">
+                <h3>Key Insight</h3>
+                <p id="insight">Loading insights...</p>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<script>
+let chart;
+
+async function loadMetrics(){
+    const res = await fetch("http://127.0.0.1:8000/metrics");
+    const data = await res.json();
+
+    document.getElementById("avg").innerText = data.overall_avg.toFixed(2);
+    document.getElementById("best").innerText = data.best_facility;
+    document.getElementById("worst").innerText = data.worst_facility;
+
+    document.getElementById("insight").innerText =
+        `Overall average satisfaction is ${data.overall_avg.toFixed(2)}. 
+        ${data.best_facility} is the highest rated facility, while ${data.worst_facility} needs more attention.`;
+}
+
+async function loadChart(url="http://127.0.0.1:8000/data"){
+    const res = await fetch(url);
+    const data = await res.json();
+
+    document.getElementById("total").innerText = data.length;
+
+    const facilityMap = {};
+
+    data.forEach(item=>{
+        const facility = item.facility_rated;
+        if(!facilityMap[facility]){
+            facilityMap[facility] = [];
+        }
+        facilityMap[facility].push(Number(item.satisfaction_score));
+    });
+
+    const labels = Object.keys(facilityMap);
+
+    const values = labels.map(facility=>{
+        const scores = facilityMap[facility];
+        return scores.reduce((a,b)=>a+b,0) / scores.length;
+    });
+
+    if(chart) chart.destroy();
+
+    chart = new Chart(document.getElementById("chart"),{
+        type:"bar",
+        data:{
+            labels:labels,
+            datasets:[{
+                label:"Average Satisfaction Score",
+                data:values,
+                backgroundColor:["#4f46e5","#22c55e","#f59e0b","#ef4444","#06b6d4"],
+                borderRadius:12
+            }]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{
+                legend:{display:true, position:"top"},
+                title:{display:true, text:"Average Satisfaction by Facility"}
+            },
+            scales:{
+                x:{
+                    title:{display:true, text:"Campus Facilities"}
+                },
+                y:{
+                    beginAtZero:true,
+                    max:5,
+                    title:{display:true, text:"Satisfaction Score (1 to 5)"}
+                }
+            }
+        }
+    });
+}
+
+function applyFilter(){
+    const facility = document.getElementById("filter").value;
+
+    if(facility === "All"){
+        document.getElementById("title").innerText = "Campus Pulse Dashboard";
+        loadChart();
+        loadMetrics();
+    }else{
+        document.getElementById("title").innerText = facility + " Satisfaction Dashboard";
+        loadChart(`http://127.0.0.1:8000/filter?facility=${facility}`);
+    }
+}
+
+function logout(){
+    localStorage.removeItem("campusPulseLogin");
+    window.location.href = "login.html";
+}
+
+loadMetrics();
+loadChart();
+</script>
+
+</body>
+</html>
